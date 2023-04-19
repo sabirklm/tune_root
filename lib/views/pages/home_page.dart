@@ -1,13 +1,27 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tuneroot_application/views/pages/sample_page.dart';
+import 'package:tuneroot_application/services/imp/music_service.dart';
+import 'package:tuneroot_application/views/pages/library_page.dart';
+import 'package:tuneroot_application/views/pages/liked_page.dart';
+import 'package:tuneroot_application/views/pages/play_list_page.dart';
+import 'package:tuneroot_application/views/pages/search_page.dart';
 import 'package:tuneroot_application/views/widgets/login_sign_up_card.dart';
 import 'package:tuneroot_application/views/widgets/snackbar.dart';
 import 'package:tuneroot_application/views/widgets/sponsored_card.dart';
 
 import '../widgets/tune_root_short_card.dart';
+
+enum HOMEVIEWTYPE {
+  music,
+  search,
+  library,
+  playList,
+  liked,
+}
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,11 +35,13 @@ class _HomePageState extends State<HomePage>
   String title = "";
   final _tuneRoot = "TuneRoot";
   late AnimationController _controller;
-  bool isAuthenticated = false;
+  bool isAuthenticated = true;
+  HOMEVIEWTYPE homeviewtype = HOMEVIEWTYPE.search;
 
   @override
   void initState() {
     super.initState();
+    MusicService().getMusic();
     _controller = AnimationController(vsync: this);
     _controller.animateTo(
       1.0,
@@ -56,46 +72,46 @@ class _HomePageState extends State<HomePage>
     super.dispose();
   }
 
-  showOverlay(BuildContext context) async {
-    var state = Overlay.of(context);
-    OverlayEntry? instanceOfEntry;
-    var entry = OverlayEntry(
-      builder: (context) {
-        return Positioned(
-          right: 8,
-          bottom: 8,
-          child: Container(
-            margin: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              color: Colors.pinkAccent,
-            ),
-            padding: const EdgeInsets.all(16),
-            width: 220,
-            height: 220,
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        instanceOfEntry!.remove();
-                      },
-                      icon: const Icon(
-                        Icons.close,
-                      ),
-                    ),
-                  ],
-                )
-              ],
-            ),
-          ),
-        );
-      },
-    );
-    state.insert(entry);
-    instanceOfEntry = entry;
-  }
+  // showOverlay(BuildContext context) async {
+  //   var state = Overlay.of(context);
+  //   OverlayEntry? instanceOfEntry;
+  //   var entry = OverlayEntry(
+  //     builder: (context) {
+  //       return Positioned(
+  //         right: 8,
+  //         bottom: 8,
+  //         child: Container(
+  //           margin: const EdgeInsets.all(16),
+  //           decoration: BoxDecoration(
+  //             borderRadius: BorderRadius.circular(16),
+  //             color: Colors.pinkAccent,
+  //           ),
+  //           padding: const EdgeInsets.all(16),
+  //           width: 220,
+  //           height: 220,
+  //           child: Column(
+  //             children: [
+  //               Row(
+  //                 children: [
+  //                   IconButton(
+  //                     onPressed: () {
+  //                       instanceOfEntry!.remove();
+  //                     },
+  //                     icon: const Icon(
+  //                       Icons.close,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               )
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  //   state.insert(entry);
+  //   instanceOfEntry = entry;
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +133,10 @@ class _HomePageState extends State<HomePage>
           child: Text(
             "TuneRoot",
             style: GoogleFonts.tillana(
-                fontSize: 32, color: Colors.black, fontWeight: FontWeight.w700),
+              fontSize: 32,
+              color: Colors.black,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         actions: [
@@ -199,8 +218,11 @@ class _HomePageState extends State<HomePage>
             child: Column(
               children: [
                 ListTile(
-                  key: const Key('PRESS'),
+                  key: const Key('home-drawer-key'),
                   onTap: () {
+                    setState(() {
+                      homeviewtype = HOMEVIEWTYPE.music;
+                    });
                     log("___HomeItemClicked");
                   },
                   leading: const Icon(
@@ -214,7 +236,12 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
                 ListTile(
-                  onTap: () {},
+                  key: const Key('search-drawer-key'),
+                  onTap: () {
+                    setState(() {
+                      homeviewtype = HOMEVIEWTYPE.search;
+                    });
+                  },
                   leading: const Icon(
                     Icons.search,
                   ),
@@ -226,7 +253,12 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
                 ListTile(
-                  onTap: () {},
+                  key: const Key('library-drawer-key'),
+                  onTap: () {
+                    setState(() {
+                      homeviewtype = HOMEVIEWTYPE.library;
+                    });
+                  },
                   leading: const Icon(
                     Icons.my_library_books_outlined,
                   ),
@@ -241,7 +273,11 @@ class _HomePageState extends State<HomePage>
                   height: 32,
                 ),
                 ListTile(
-                  onTap: () {},
+                  onTap: () {
+                    setState(() {
+                      homeviewtype = HOMEVIEWTYPE.playList;
+                    });
+                  },
                   leading: const Icon(
                     Icons.playlist_add,
                   ),
@@ -253,7 +289,11 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
                 ListTile(
-                  onTap: () {},
+                  onTap: () {
+                    setState(() {
+                      homeviewtype = HOMEVIEWTYPE.liked;
+                    });
+                  },
                   leading: const Icon(
                     Icons.favorite_outline_sharp,
                   ),
@@ -267,72 +307,78 @@ class _HomePageState extends State<HomePage>
               ],
             ),
           ),
-          Expanded(
-            child: ListView(
-              children: [
-                const SponsoredCard(),
-                ...List.generate(
-                  12,
-                  (index) => Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Tune Root",
-                              style: GoogleFonts.roboto(
-                                fontSize: 24,
-                              ),
-                            ),
-                            InkWell(
-                              onTap: () {
-                                //TODO:Show all audio
-                              },
-                              child: Text(
-                                "See All",
+          if (homeviewtype == HOMEVIEWTYPE.search) const SearchPage(),
+          if (homeviewtype == HOMEVIEWTYPE.library) const LibraryPage(),
+          if (homeviewtype == HOMEVIEWTYPE.playList) const PlayListPage(),
+          if (homeviewtype == HOMEVIEWTYPE.liked) const LikedPage(),
+          if (homeviewtype == HOMEVIEWTYPE.music)
+            Expanded(
+              child: ListView(
+                children: [
+                  const SponsoredCard(),
+                  ...List.generate(
+                    5,
+                    (index) => Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Tune Root",
                                 style: GoogleFonts.roboto(
-                                  fontSize: 12,
+                                  fontSize: 24,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(
-                        height: 320,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            ...List.generate(
-                              10,
-                              (index) => TuneRootShortCard(
-                                onPressedPlay: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    showSnackbar(
-                                        context: context,
-                                        message: "Can't play right now."),
-                                  );
+                              InkWell(
+                                onTap: () {
+                                  //TODO:Show all audio
                                 },
-                                onTapTuneRootCard: () {
-                                  // var route = MaterialPageRoute(
-                                  //   builder: (context) =>
-                                  //       const GridMagnification(),
-                                  // );
-                                  // Navigator.push(context, route);
-                                },
+                                child: Text(
+                                  "See All",
+                                  style: GoogleFonts.roboto(
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ),
-                            )
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                        SizedBox(
+                          height: 320,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              ...List.generate(
+                                10,
+                                (index) => TuneRootShortCard(
+                                  onPressedPlay: () async {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      showSnackbar(
+                                        context: context,
+                                        message: "Can't play right now.",
+                                      ),
+                                    );
+                                  },
+                                  onTapTuneRootCard: () {
+                                    // var route = MaterialPageRoute(
+                                    //   builder: (context) =>
+                                    //       const GridMagnification(),
+                                    // );
+                                    // Navigator.push(context, route);
+                                  },
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          )
+                ],
+              ),
+            )
         ],
       ),
     );
@@ -346,7 +392,9 @@ class _ProfileHeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(right: 8),
+      margin: const EdgeInsets.only(
+        right: 8,
+      ),
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(32),
@@ -375,6 +423,9 @@ class _ProfileHeading extends StatelessWidget {
               fontWeight: FontWeight.w400,
               color: Colors.white,
             ),
+          ),
+          const SizedBox(
+            width: 8,
           ),
         ],
       ),

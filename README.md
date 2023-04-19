@@ -1,6 +1,6 @@
 # tuneroot_application
 
-A new Flutter project.
+It is a full stack project on Flutter and [Flask](https://github.com/sabirklm/tune-root-services) 
 
 ## Getting Started
 
