@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tuneroot_application/views/pages/dash_board_page.dart';
 
 class LoginSignUpCard extends StatelessWidget {
   final String title;
@@ -92,7 +93,7 @@ class LoginSignUpCard extends StatelessWidget {
                   onTap: () {
                     //TODO:Write necessary actions for sign up
                     var route = MaterialPageRoute(
-                      builder: (context) => Container(),
+                      builder: (context) =>const DashboardPage(),
                     );
                     Navigator.push(context, route);
                   },
