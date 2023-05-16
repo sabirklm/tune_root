@@ -1,6 +1,6 @@
 import 'package:tuneroot_application/models/model.dart';
 
 abstract class MusicDAO {
-  getMusic();
+  Future<Map<String, dynamic>> getMusics();
   Future<List<Category>> getCategories();
 }

@@ -8,10 +8,12 @@ var img =
 
 class TuneRootShortCard extends StatelessWidget {
   final void Function()? onTapTuneRootCard;
-  final  void Function()? onPressedPlay;
+  final void Function()? onPressedPlay;
+  final String? imgurl;
   const TuneRootShortCard({
     super.key,
-    this.onTapTuneRootCard, this.onPressedPlay,
+    this.onTapTuneRootCard,
+    this.onPressedPlay, this.imgurl,
   });
 
   @override
@@ -37,7 +39,7 @@ class TuneRootShortCard extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
-                      img,
+                      imgurl??img,
                       width: 160,
                       height: 180,
                       fit: BoxFit.cover,

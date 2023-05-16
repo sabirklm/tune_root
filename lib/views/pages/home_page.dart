@@ -2,8 +2,10 @@
 
 import 'dart:developer';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tuneroot_application/models/model.dart';
 import 'package:tuneroot_application/services/imp/music_service.dart';
 import 'package:tuneroot_application/views/pages/library_page.dart';
 import 'package:tuneroot_application/views/pages/liked_page.dart';
@@ -13,6 +15,8 @@ import 'package:tuneroot_application/views/widgets/login_sign_up_card.dart';
 import 'package:tuneroot_application/views/widgets/snackbar.dart';
 import 'package:tuneroot_application/views/widgets/sponsored_card.dart';
 
+import '../widgets/music_player.dart';
+import '../widgets/music_playing_animation.dart';
 import '../widgets/tune_root_short_card.dart';
 
 enum HOMEVIEWTYPE {
@@ -36,12 +40,14 @@ class _HomePageState extends State<HomePage>
   final _tuneRoot = "TuneRoot";
   late AnimationController _controller;
   bool isAuthenticated = true;
-  HOMEVIEWTYPE homeviewtype = HOMEVIEWTYPE.search;
-
+  HOMEVIEWTYPE homeviewtype = HOMEVIEWTYPE.music;
+  Map<String, dynamic> musics = {};
+  Map<String, dynamic>? musicToPlay;
+  AudioPlayer audioPlayer = AudioPlayer();
   @override
   void initState() {
     super.initState();
-    MusicService().getMusic();
+    _getMusics();
     _controller = AnimationController(vsync: this);
     _controller.animateTo(
       1.0,
@@ -63,6 +69,13 @@ class _HomePageState extends State<HomePage>
         var temp = (_controller.value * (_tuneRoot.length - 1)).toInt();
         title += _tuneRoot[temp];
       });
+    });
+  }
+
+  _getMusics() async {
+    var temp = await MusicService().getMusics();
+    setState(() {
+      musics.addAll(temp);
     });
   }
 
@@ -170,47 +183,17 @@ class _HomePageState extends State<HomePage>
           )
         ],
       ),
-      bottomNavigationBar: Container(
-        height: 80,
-        decoration: BoxDecoration(
-          color: Colors.green.shade900,
-        ),
-        child: Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Image.network(
-                img,
-                width: 64,
-                height: 64,
-                fit: BoxFit.cover,
-              ),
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Ae Mere Humsafar (from Bazigar)",
-                  style: GoogleFonts.nunito(
-                    fontSize: 14,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  "Binod Rathor, Alka Yagnik",
-                  style: GoogleFonts.nunito(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+      bottomNavigationBar: musicToPlay != null
+          ? MusicPlayer(
+              music: musicToPlay!,
+              onPressedClose: () {
+                audioPlayer.stop();
+                setState(() {
+                  musicToPlay = null;
+                });
+              },
+            )
+          : null,
       body: Row(
         children: [
           SizedBox(
@@ -316,69 +299,81 @@ class _HomePageState extends State<HomePage>
               child: ListView(
                 children: [
                   const SponsoredCard(),
-                  ...List.generate(
-                    5,
-                    (index) => Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "Tune Root",
-                                style: GoogleFonts.roboto(
-                                  fontSize: 24,
-                                ),
-                              ),
-                              InkWell(
-                                onTap: () {
-                                  //TODO:Show all audio
-                                },
-                                child: Text(
-                                  "See All",
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 12,
+                  ...musics.keys
+                      .map(
+                        (e) => Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    e,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: 24,
+                                    ),
                                   ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                          height: 320,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              ...List.generate(
-                                10,
-                                (index) => TuneRootShortCard(
-                                  onPressedPlay: () async {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      showSnackbar(
-                                        context: context,
-                                        message: "Can't play right now.",
+                                  InkWell(
+                                    onTap: () {
+                                      //TODO:Show all audio
+                                    },
+                                    child: Text(
+                                      "See All",
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 12,
                                       ),
-                                    );
-                                  },
-                                  onTapTuneRootCard: () {
-                                    // var route = MaterialPageRoute(
-                                    //   builder: (context) =>
-                                    //       const GridMagnification(),
-                                    // );
-                                    // Navigator.push(context, route);
-                                  },
-                                ),
-                              )
-                            ],
-                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                              height: 320,
+                              child: ListView(
+                                scrollDirection: Axis.horizontal,
+                                children: [
+                                  ...List.generate(
+                                    musics[e]!.length,
+                                    (index) => TuneRootShortCard(
+                                      imgurl: musics[e]![index]["imgUrl"],
+                                      onPressedPlay: () async {
+                                        var url = musics[e]![index]["url"];
+                                        print("___MusicUrl $url");
+                                        await audioPlayer.play(UrlSource(url),
+                                            volume: 1.0);
+
+                                        setState(() {
+                                          musicToPlay = musics[e]![index];
+                                        });
+                                        // ScaffoldMessenger.of(context)
+                                        //     .showSnackBar(
+                                        //   showSnackbar(
+                                        //     context: context,
+                                        //     message: "Can't play right now.",
+                                        //   ),
+                                        // );
+                                      },
+                                      onTapTuneRootCard: () {
+                                        // var route = MaterialPageRoute(
+                                        //   builder: (context) =>
+                                        //       const GridMagnification(),
+                                        // );
+                                        // Navigator.push(context, route);
+                                      },
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
+                      )
+                      .toList(),
                 ],
               ),
-            )
+            ),
         ],
       ),
     );
